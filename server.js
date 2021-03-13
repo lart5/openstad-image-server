@@ -1,11 +1,26 @@
 require('dotenv').config();
+const use_redis = process.env.USE_REDIS || 0
 const express = require('express');
 const app = express();
 const imgSteam = require('image-steam');
 const multer = require('multer');
 const passport = require('passport');
 const Strategy = require('passport-http-bearer').Strategy;
-const db = require('./db');
+let db
+let redis
+
+if (!use_redis) 
+    db = require('./db'); 
+else { 
+    const Redis = require("ioredis");
+    redis = new Redis({
+        port: process.env.REDIS_PORT || 6379, // Redis port
+        host: process.env.REDIS_HOST || "127.0.0.1", // Redis host
+        password: process.env.REDIS_PASSWORD,
+        user: process.env.REDIS_USER,
+        db: process.env.REDIS_DB || 0,
+    });
+}
 
 const upload = multer({
   dest: 'images/',
@@ -73,15 +88,26 @@ const argv = require('yargs')
 
 passport.use(new Strategy(
   function (token, done) {
-    db.clients.findByToken(token, function (err, client) {
-      if (err) {
-        return done(err);
-      }
-      if (!client) {
-        return done(null, false);
-      }
-      return done(null, client, {scope: 'all'});
-    });
+    if (!use_redis){
+        db.clients.findByToken(token, function (err, client) {
+            if (err) {
+                return done(err);
+            }
+            if (!client) {
+                return done(null, false);
+            }
+            return done(null, client, {scope: 'all'});
+        });
+    }else{
+        redis.get(token).then(function (client) {
+            if (!client) {
+                return done(null, false);
+            }
+            return done(null, client, {scope: 'all'});
+        }).catch((err) => {
+            return done(err);
+        })
+    }
   }
 ));
 

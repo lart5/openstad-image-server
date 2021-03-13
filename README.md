@@ -35,6 +35,12 @@ APP_URL=
 CACHE_TTS=
 CACHE_OPTIMIZED_TTS=
 CACHE_OPTIMIZED_TTS=
+USE_REDIS= # 1 for enable search token in redis, 0 for enable search in mysql 
+REDIS_PORT= # default 6379
+REDIS_HOST= # default 127.0.0.1
+REDIS_PASSWORD= # default without auth
+REDIS_USER= # default without auth
+REDIS_DB=  # default 0,
 ```
 For throttle see options in [node-steam](https://github.com/asilvas/node-image-steam#throttle-options).
 
